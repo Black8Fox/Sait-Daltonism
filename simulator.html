@@ -1,0 +1,183 @@
+﻿<html>
+<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Симулятор дальтонизма</title>
+        <link rel="stylesheet" href="style.css">
+	<script src="progress.js"></script>
+	<link rel='stylesheet' href='progress.css' /> 
+</head>
+<body>
+	<div id="aboutBox" class="boxed">
+		<h1>Симулятор дальтонизма</h1>
+		<h2>Памятка пользователю</h2>
+		<p>Для загрузки изображения перетащите его или используйте загрузчик файлов в левом верхнем углу.</p>
+		<p>Все процессы происходят только в браузере. Изображение не будет покидать ваш компьютер.</p>
+		<p>Отображаемое изображение можно перемещать щелчком мыши и перетаскиванием, а также увеличивать с помощью двойного щелчка (shift-) или с помощью колесика мыши.</p>
+		<p>Функция "Обычная Линза" позволяет вам увидеть, как выглядело исходное изображение в области вокруг вашего курсора. "Обратная линза" показывает смоделированное изображение вокруг вашего курсора.</p>
+	</div>
+	<div id="functions" class="container">
+		<div>
+			<input type="file" id="fileInput" />
+			<label>
+				<input type="radio" name="colorblindType" value="Normal" checked/>Норма</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Protanopia" />Протанопия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Protanomaly" />Протаномалия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Deuteranopia" />Дейтеранопия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Deuteranomaly" />Дейтераномалия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Tritanopia" />Тританопия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Tritanomaly" />Тританомалия</label>
+			<label>
+				<input type="radio" name="colorblindType" value="Achromatopsia" />Ахроматопсия</label>
+			<label style="margin-left: 1em;display: none;">Уровень:
+				<input type="range" min="0" max="100" value="50" class="slider" id="severity">
+			</label>
+			<select id="method">
+				<option value="brett" selected>Модель Бреттеля(1997)</option>
+				<option value="macha">Модель Мачадо(2009)</option>
+			</select>
+			<br/>
+			<label>
+				<input type="radio" name="lens" value="No" checked/>Без линзы</label>
+			<label>
+				<input type="radio" name="lens" value="Normal" />Обычная линза</label>
+			<label>
+				<input type="radio" name="lens" value="Inverse" />Обратная линза</label> <span id="loadingIndicator" style="display:none">&nbsp;Загрузка...</span> </div>
+		<div>
+			<hr/> </div>
+		<div style="height: 100%" id="canvasDiv">
+			<div id="dropNotification" class="boxed" style="display: none">
+				<h1>Перетащите изображение для загрузки</h1></div>
+			<canvas id="outCanvas">Ваш браузер не поддерживается. Установите обновление</canvas>
+		</div>
+	</div>
+	<script src="panZoomImage.js"></script>
+	<script src="brettel_colorblind_simulation.js"></script>
+	<script src="machado_colorblind_simulation.js"></script>
+	<script src="colorblind.js"></script>
+	<script type="text/javascript">
+	var loadingIndicator = document.getElementById('loadingIndicator');
+	function filterOrImageChanged() {
+		var type = document.querySelector('input[name = "colorblindType"]:checked').value;
+		var method = document.querySelector('#method option:checked').value;
+		var filterName = method + type;
+		console.log("filterOrImageChanged: " + filterName);
+		var isMachado = method == "macha";
+		document.getElementById('severity').parentElement.style.display = isMachado ? 'inline' : 'none';
+		['Protanopia', 'Deuteranopia', 'Tritanopia', 'Achromatopsia'].forEach((item, i) => {
+			document.querySelector('input[type="radio"][value="' + item + '"]').parentElement.style.display = isMachado ? 'none' : 'inline';
+		});
+		if(method == 'macha' && type != "Normal") {
+			filterName += "_" + document.getElementById('severity').value
+		}
+		if(currentImage) {
+			loadingIndicator.style.display = "inline";
+			NProgress.set(0.2);
+			setTimeout(function() {
+				getFilteredImage(currentImage, filterName, function(filteredImage, url) {
+					panZoomImage.displayImage(filteredImage);
+					NProgress.done();
+					loadingIndicator.style.display = "none";
+				});
+			}, 0);
+		}
+	}
+	function lensChanged() {
+		var v = document.querySelector('input[name = "lens"]:checked').value;
+		if(v === "No") {
+			panZoomImage.lens = 0;
+		} else if(v === "Normal") {
+			panZoomImage.lens = 1;
+		} else if(v === "Inverse") {
+			panZoomImage.lens = 2;
+		} else {
+			throw "Недопустимый тип линзы";
+		}
+		panZoomImage.redraw();
+	}
+	(function() {
+		var radios = document.querySelectorAll('input[name = "colorblindType"]');
+		var i;
+		for(i = 0; i < radios.length; i++) {
+			radios[i].onclick = filterOrImageChanged;
+		}
+		radios = document.querySelectorAll('input[name = "lens"]');
+		for(i = 0; i < radios.length; i++) {
+			radios[i].onclick = lensChanged;
+		}
+		document.getElementById("method").onchange = filterOrImageChanged;
+		document.getElementById("severity").onchange = filterOrImageChanged;
+	})();
+	var fileInput = document.getElementById('fileInput');
+	var currentImage;
+	fileInput.onchange = function(evt) {
+		var tgt = evt.target || window.event.srcElement,
+			files = tgt.files;
+		readFile(files);
+	};
+	function readFile(files) {
+		document.getElementById("aboutBox").style.display = "none";
+		if(FileReader && files && files.length) {
+			if(files.length !== 1) {
+				alert("Можно загружать только одно изображение за раз");
+				return;
+			}
+			if(!files[0].type.match('image.*')) {
+				alert("Этот файл не является изображением");
+				return;
+			}
+			NProgress.set(0.0);
+			var fr = new FileReader();
+			fr.onload = function() {
+				var img = new Image();
+				img.onload = function() {
+					currentImage = this;
+					panZoomImage.setHiddenLensImage(currentImage);
+					clearImageCache();
+					filterOrImageChanged();
+				};
+				img.src = fr.result;
+			};
+			fr.readAsDataURL(files[0]);
+		} else {
+			alert("Не удалось загрузить изображение");
+		}
+	}
+	var canvasDiv = document.getElementById("canvasDiv");
+	var dropNotification = document.getElementById("dropNotification");
+	canvasDiv.addEventListener('drop', function(evt) {
+		evt.stopPropagation();
+		evt.preventDefault();
+		dropNotification.style.display = "none";
+		readFile(evt.dataTransfer.files);
+	}, false);
+	canvasDiv.addEventListener('dragover', function(evt) {
+		document.getElementById("aboutBox").style.display = "none";
+		evt.stopPropagation();
+		evt.preventDefault();
+		dropNotification.style.display = "block";
+		evt.dataTransfer.dropEffect = 'copy';
+	}, false);
+	canvasDiv.addEventListener('dragleave', function(evt) {
+		dropNotification.style.display = "none";
+	}, false);
+	document.onpaste = function(event) {
+		var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+		var blob = null;
+		for(var i = 0; i < items.length; i++) {
+			if(items[i].type.indexOf("image") === 0) {
+				blob = items[i].getAsFile();
+			}
+		}
+		if(blob !== null) {
+			readFile([blob]);
+		}
+	};
+	</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+body {
+    font-family: Arial;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+#title {
+    front-size: 70 px;
+}
+
+header {
+    background: #35424a;
+    color: #ffffff;
+    padding: 300px 0;
+    text-align: center;
+    background-image: url(colored-eye.jpg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    block-height: fit-content; 
+}
+
+a.button {
+    position: relative;
+    top: 50px;
+    border: 20px solid white;
+    border-radius: 30px;
+    color: buttontext;
+    background-color: white;
+    text-decoration: none;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+main {
+    padding: 20px;
+}
+
+section {
+    background: #ffffff;
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+footer {
+    text-align: center;
+    padding: 10px 0;
+    background: #35424a;
+    color: #ffffff;
+}
